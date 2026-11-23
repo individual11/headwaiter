@@ -10,7 +10,6 @@ Roughly in order. Open an issue to argue for something, or if you want to build 
 - Reveal in Finder, open in terminal, open in editor
 - A marker for orphaned servers (the terminal or agent that started them is gone)
 - Stop all, per project and globally
-- Notify when a server exits unexpectedly (opt-in)
 - CPU and memory per server
 - Port lookup for any process ("who has port 3000?")
 - Show which terminal or agent started each server

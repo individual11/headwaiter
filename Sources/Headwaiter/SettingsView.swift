@@ -10,6 +10,7 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             Tab("General", systemImage: "gearshape") { GeneralSettings() }
+            Tab("Notifications", systemImage: "bell") { NotificationSettings() }
             Tab("Projects", systemImage: "folder") { ProjectSettings(store: store) }
         }
         // On the whole window: a tab's own onDisappear fires when you switch tabs.
@@ -63,6 +64,48 @@ struct GeneralSettings: View {
             }
         }
         .settingsTab()
+    }
+}
+
+struct NotificationSettings: View {
+    var notifier = Notifier.shared
+    @AppStorage(Preferences.notifyStartedKey) private var started = false
+    @AppStorage(Preferences.notifyStoppedKey) private var stopped = false
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $started) {
+                    Text("When a server starts")
+                    Text("Once it has run for 10 seconds, so short test runs stay quiet. Click the notification to open the server.")
+                }
+                Toggle(isOn: $stopped) {
+                    Text("When a server stops")
+                    Text("Not when you stop it from Headwaiter, or when it restarts within 10 seconds.")
+                }
+            } footer: {
+                Text("Hidden ports and projects never notify. Nothing is shown while the list is open.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if notifier.isBlocked && (started || stopped) {
+                LabeledContent {
+                    Button("Open System Settings…") { notifier.openSystemSettings() }
+                } label: {
+                    Label("Notifications are turned off", systemImage: "bell.slash.fill")
+                    Text("Allow them for Headwaiter in System Settings.")
+                }
+            }
+        }
+        .settingsTab()
+        .onChange(of: started) { _, on in if on { notifier.requestPermission() } }
+        .onChange(of: stopped) { _, on in if on { notifier.requestPermission() } }
+        .onAppear { notifier.refreshStatus() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            notifier.refreshStatus()
+        }
     }
 }
 
