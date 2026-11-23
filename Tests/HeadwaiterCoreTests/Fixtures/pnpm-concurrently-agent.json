@@ -1,0 +1,247 @@
+{
+  "files": {
+    "/Users/dev/Desktop/projects/acme/apps/client/package.json": "{\n  \"name\": \"@acme/client\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"vite\"\n  },\n  \"dependencies\": {\n    \"react\": \"^19\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^8\"\n  }\n}",
+    "/Users/dev/Desktop/projects/acme/apps/server/package.json": "{\n  \"name\": \"@acme/server\",\n  \"private\": true,\n  \"scripts\": {\n    \"start\": \"tsx src/index.ts\"\n  },\n  \"dependencies\": {\n    \"fastify\": \"^5\"\n  },\n  \"devDependencies\": {}\n}",
+    "/Users/dev/Desktop/projects/acme/package.json": "{\n  \"name\": \"acme\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"concurrently --names server,client --prefix-colors blue,magenta \\\"pnpm --filter @acme/server start\\\" \\\"pnpm --filter @acme/client dev\\\"\"\n  },\n  \"devDependencies\": {\n    \"concurrently\": \"^10\",\n    \"tsx\": \"^4\",\n    \"typescript\": \"^5\",\n    \"vitest\": \"^5\"\n  }\n}"
+  },
+  "homeDirectory": "/Users/dev",
+  "name": "pnpm + concurrently, started by Claude Code",
+  "notes": "",
+  "otherPaths": [
+    "/Users/dev/Desktop/projects/acme/pnpm-workspace.yaml"
+  ],
+  "processes": [
+    {
+      "arguments": [
+        "/Applications/Claude.app/Contents/Helpers/disclaimer",
+        "--",
+        "/usr/bin/env",
+        "ACME_ENV=dev",
+        "pnpm",
+        "dev"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme",
+      "executablePath": "/Applications/Claude.app/Contents/Helpers/disclaimer",
+      "pgid": 41269,
+      "pid": 41269,
+      "ppid": 45402,
+      "startTime": 1795128881.319669,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "/Users/dev/Library/pnpm/bin/../global/v11/557a16cc51f818d142da6cabdc92990972c46d60721da61794cda49f5c7e27d2/node_modules/@pnpm/exe/pnpm",
+        "dev"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme",
+      "executablePath": "/Users/dev/Library/pnpm/global/v11/100b8-18d7c80bb200fc50-0/node_modules/.pnpm/@pnpm+exe@file+..+..+..+..+..+..+..+var+folders+k3+jrgft0r51wq84gxpgks7km000000gn+T+tmp_ba09873e242d14b8129140c3487cf3b1/node_modules/@pnpm/exe/pnpm",
+      "pgid": 41269,
+      "pid": 41289,
+      "ppid": 41269,
+      "startTime": 1795128881.322888,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "node",
+        "/Users/dev/Desktop/projects/acme/node_modules/.bin/../concurrently/dist/bin/index.js",
+        "--names",
+        "server,client",
+        "--prefix-colors",
+        "blue,magenta",
+        "pnpm --filter @acme/server start",
+        "pnpm --filter @acme/client dev"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme",
+      "executablePath": "/Users/dev/.nvm/versions/node/v24.21.0/bin/node",
+      "pgid": 41269,
+      "pid": 41316,
+      "ppid": 41289,
+      "startTime": 1795128881.391412,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "/Users/dev/Library/pnpm/bin/../global/v11/557a16cc51f818d142da6cabdc92990972c46d60721da61794cda49f5c7e27d2/node_modules/@pnpm/exe/pnpm",
+        "--filter",
+        "@acme/server",
+        "start"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme",
+      "executablePath": "/Users/dev/Library/pnpm/global/v11/100b8-18d7c80bb200fc50-0/node_modules/.pnpm/@pnpm+exe@file+..+..+..+..+..+..+..+var+folders+k3+jrgft0r51wq84gxpgks7km000000gn+T+tmp_ba09873e242d14b8129140c3487cf3b1/node_modules/@pnpm/exe/pnpm",
+      "pgid": 41269,
+      "pid": 41323,
+      "ppid": 41316,
+      "startTime": 1795128881.533848,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "/Users/dev/Library/pnpm/bin/../global/v11/557a16cc51f818d142da6cabdc92990972c46d60721da61794cda49f5c7e27d2/node_modules/@pnpm/exe/pnpm",
+        "--filter",
+        "@acme/client",
+        "dev"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme",
+      "executablePath": "/Users/dev/Library/pnpm/global/v11/100b8-18d7c80bb200fc50-0/node_modules/.pnpm/@pnpm+exe@file+..+..+..+..+..+..+..+var+folders+k3+jrgft0r51wq84gxpgks7km000000gn+T+tmp_ba09873e242d14b8129140c3487cf3b1/node_modules/@pnpm/exe/pnpm",
+      "pgid": 41269,
+      "pid": 41324,
+      "ppid": 41316,
+      "startTime": 1795128881.534392,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "node",
+        "/Users/dev/Desktop/projects/acme/apps/client/node_modules/.bin/../vite/bin/vite.js"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme/apps/client",
+      "executablePath": "/Users/dev/.nvm/versions/node/v24.21.0/bin/node",
+      "pgid": 41269,
+      "pid": 41337,
+      "ppid": 41324,
+      "startTime": 1795128881.569881,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "node",
+        "/Users/dev/Desktop/projects/acme/node_modules/.bin/../tsx/dist/cli.mjs",
+        "src/index.ts"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme/apps/server",
+      "executablePath": "/Users/dev/.nvm/versions/node/v24.21.0/bin/node",
+      "pgid": 41269,
+      "pid": 41344,
+      "ppid": 41323,
+      "startTime": 1795128881.624013,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "/Users/dev/.nvm/versions/node/v24.21.0/bin/node",
+        "--require",
+        "/Users/dev/Desktop/projects/acme/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/preflight.cjs",
+        "--import",
+        "file:///Users/dev/Desktop/projects/acme/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/loader.mjs",
+        "src/index.ts"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme/apps/server",
+      "executablePath": "/Users/dev/.nvm/versions/node/v24.21.0/bin/node",
+      "pgid": 41269,
+      "pid": 41351,
+      "ppid": 41344,
+      "startTime": 1795128881.666419,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "/Applications/Claude.app/Contents/MacOS/Claude"
+      ],
+      "cwd": "/",
+      "executablePath": "/Applications/Claude.app/Contents/MacOS/Claude",
+      "pgid": 45402,
+      "pid": 45402,
+      "ppid": 1,
+      "startTime": 1794589479.18265,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "/Applications/Claude.app/Contents/Helpers/disclaimer",
+        "--",
+        "/usr/bin/env",
+        "PORT=4300",
+        "pnpm",
+        "exec",
+        "tsx",
+        "/Users/dev/Desktop/projects/acme/.claude/worktrees/checkout-fix/launch.mts"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme",
+      "executablePath": "/Applications/Claude.app/Contents/Helpers/disclaimer",
+      "pgid": 47418,
+      "pid": 47418,
+      "ppid": 45402,
+      "startTime": 1794947978.367375,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "/Users/dev/Library/pnpm/bin/../global/v11/557a16cc51f818d142da6cabdc92990972c46d60721da61794cda49f5c7e27d2/node_modules/@pnpm/exe/pnpm",
+        "exec",
+        "tsx",
+        "/Users/dev/Desktop/projects/acme/.claude/worktrees/checkout-fix/launch.mts"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme",
+      "executablePath": "/Users/dev/Library/pnpm/global/v11/100b8-18d7c80bb200fc50-0/node_modules/.pnpm/@pnpm+exe@file+..+..+..+..+..+..+..+var+folders+k3+jrgft0r51wq84gxpgks7km000000gn+T+tmp_ba09873e242d14b8129140c3487cf3b1/node_modules/@pnpm/exe/pnpm",
+      "pgid": 47418,
+      "pid": 47419,
+      "ppid": 47418,
+      "startTime": 1794947978.370125,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "node",
+        "/Users/dev/Desktop/projects/acme/node_modules/.bin/../tsx/dist/cli.mjs",
+        "/Users/dev/Desktop/projects/acme/.claude/worktrees/checkout-fix/launch.mts"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme",
+      "executablePath": "/Users/dev/.nvm/versions/node/v24.21.0/bin/node",
+      "pgid": 47418,
+      "pid": 47426,
+      "ppid": 47419,
+      "startTime": 1794947978.441432,
+      "uid": 501
+    },
+    {
+      "arguments": [
+        "/Users/dev/.nvm/versions/node/v24.21.0/bin/node",
+        "--require",
+        "/Users/dev/Desktop/projects/acme/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/preflight.cjs",
+        "--import",
+        "file:///Users/dev/Desktop/projects/acme/node_modules/.pnpm/tsx@4.23.15/node_modules/tsx/dist/loader.mjs",
+        "/Users/dev/Desktop/projects/acme/.claude/worktrees/checkout-fix/launch.mts"
+      ],
+      "cwd": "/Users/dev/Desktop/projects/acme/.claude/worktrees/checkout-fix/run",
+      "executablePath": "/Users/dev/.nvm/versions/node/v24.21.0/bin/node",
+      "pgid": 47418,
+      "pid": 47433,
+      "ppid": 47426,
+      "startTime": 1794947978.492465,
+      "uid": 501
+    }
+  ],
+  "sockets": [
+    {
+      "address": "127.0.0.1",
+      "pcb": 8464194305464107813,
+      "pid": 41351,
+      "port": 4100
+    },
+    {
+      "address": "127.0.0.1",
+      "pcb": 9734609195415636777,
+      "pid": 41351,
+      "port": 4102
+    },
+    {
+      "address": "::1",
+      "pcb": 17484133039148516144,
+      "pid": 41337,
+      "port": 4101
+    },
+    {
+      "address": "127.0.0.1",
+      "pcb": 11832760827051024644,
+      "pid": 47433,
+      "port": 4300
+    },
+    {
+      "address": "::1",
+      "pcb": 14562978071559829734,
+      "pid": 47433,
+      "port": 5373
+    }
+  ]
+}
