@@ -36,9 +36,13 @@ Projects are found from the nearest workspace root, git root or manifest (`packa
 - What Headwaiter sees stays on your Mac: no account, no analytics. It connects only to your own servers (redirects are never followed) and, for updates, to GitHub.
 - Release builds update themselves with [Sparkle](https://sparkle-project.org). They ask before checking automatically and before installing anything. Builds from source never check.
 
+## Install
+
+[Download the latest release](https://github.com/individual11/headwaiter/releases/latest), open the DMG and drag Headwaiter to Applications. It's signed and notarized, and can update itself.
+
 ## Status
 
-Early, and in daily use by its author. There's no public download yet, so build it from source (below). Some stacks are only covered by hand-written tests so far, including Docker and Go. What's next is in the [roadmap](docs/ROADMAP.md).
+Beta, and in daily use by its author. Some stacks are only covered by hand-written tests so far, including Docker and Go. What's next is in the [roadmap](docs/ROADMAP.md).
 
 ## Build and run
 
@@ -46,7 +50,7 @@ Early, and in daily use by its author. There's no public download yet, so build 
 scripts/make-dev-cert.sh          # optional, once: local signing cert so privacy grants survive rebuilds
 scripts/build-app.sh debug        # → build/Headwaiter.app
 open "build/Headwaiter.app"
-scripts/install-app.sh            # release build into ~/Applications, for daily use
+scripts/install-app.sh            # release build into ~/Applications (never updates itself)
 ```
 
 Needs Swift 6 (Xcode 16 or later). For signed, notarized builds see [RELEASING](docs/RELEASING.md).
