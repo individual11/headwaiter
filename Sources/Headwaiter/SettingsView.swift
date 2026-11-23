@@ -3,17 +3,37 @@ import HeadwaiterCore
 import ServiceManagement
 import SwiftUI
 
+/// The Settings window: one tab per category, each as tall as its content.
 struct SettingsView: View {
     let store: ServerStore
+
+    var body: some View {
+        TabView {
+            Tab("General", systemImage: "gearshape") { GeneralSettings() }
+            Tab("Projects", systemImage: "folder") { ProjectSettings(store: store) }
+        }
+        // On the whole window: a tab's own onDisappear fires when you switch tabs.
+        .onAppear { DockPresence.settingsOpened() }
+        .onDisappear { DockPresence.settingsClosed() }
+    }
+}
+
+private extension View {
+    func settingsTab() -> some View {
+        formStyle(.grouped)
+            .frame(width: 460)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+struct GeneralSettings: View {
     var updater = Updater.shared
     @AppStorage(Preferences.autoForceQuitKey) private var autoForceQuit = false
     @AppStorage(AppAppearance.key) private var appearance: AppAppearance = .system
-    @AppStorage(Preferences.showFaviconsKey) private var showFavicons = true
-    @AppStorage(Preferences.fetchFaviconsKey) private var fetchFavicons = true
 
     var body: some View {
         Form {
-            Section("General") {
+            Section {
                 OpenAtLoginRow()
                 Picker(selection: $appearance) {
                     ForEach(AppAppearance.allCases) { Text($0.title).tag($0) }
@@ -24,20 +44,6 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
                 .onChange(of: appearance) { _, new in AppAppearance.apply(new) }
             }
-
-            Section("Project icons") {
-                Toggle(isOn: $showFavicons) {
-                    Text("Show project icons")
-                    Text("Use each project's favicon instead of the framework badge. Starter icons from project templates are skipped.")
-                }
-                Toggle(isOn: $fetchFavicons) {
-                    Text("Ask running servers for their icon")
-                    Text("When the project folder has no icon, request /favicon.ico from the server once. This adds a line to the server's log.")
-                }
-                .disabled(!showFavicons)
-            }
-            .onChange(of: showFavicons) { store.refreshFavicons() }
-            .onChange(of: fetchFavicons) { store.refreshFavicons() }
 
             Section("Stopping servers") {
                 Toggle(isOn: $autoForceQuit) {
@@ -55,8 +61,33 @@ struct SettingsView: View {
                     Button("Check for Updates…") { updater.checkForUpdates() }
                 }
             }
+        }
+        .settingsTab()
+    }
+}
 
-            Section("Privacy") {
+struct ProjectSettings: View {
+    let store: ServerStore
+    @AppStorage(Preferences.showFaviconsKey) private var showFavicons = true
+    @AppStorage(Preferences.fetchFaviconsKey) private var fetchFavicons = true
+
+    var body: some View {
+        Form {
+            Section("Icons") {
+                Toggle(isOn: $showFavicons) {
+                    Text("Show project icons")
+                    Text("Use each project's favicon instead of the framework badge. Starter icons from project templates are skipped.")
+                }
+                Toggle(isOn: $fetchFavicons) {
+                    Text("Ask running servers for their icon")
+                    Text("When the project folder has no icon, request /favicon.ico from the server once. This adds a line to the server's log.")
+                }
+                .disabled(!showFavicons)
+            }
+            .onChange(of: showFavicons) { store.refreshFavicons() }
+            .onChange(of: fetchFavicons) { store.refreshFavicons() }
+
+            Section("Folder access") {
                 if store.hasDeniedAccess {
                     LabeledContent {
                         Button("Open Privacy Settings…") { Actions.openFilesAndFoldersSettings() }
@@ -94,11 +125,7 @@ struct SettingsView: View {
                 }
             }
         }
-        .formStyle(.grouped)
-        .frame(width: 460)
-        .fixedSize(horizontal: false, vertical: true)
-        .onAppear { DockPresence.settingsOpened() }
-        .onDisappear { DockPresence.settingsClosed() }
+        .settingsTab()
     }
 }
 

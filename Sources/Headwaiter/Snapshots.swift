@@ -61,8 +61,9 @@ enum Snapshots {
             write(PopoverView(store: emptyHistory), scheme: scheme, to: "\(dir)/popover-empty-history-\(suffix).png")
             write(PopoverView(store: empty), scheme: scheme, to: "\(dir)/popover-empty-\(suffix).png")
             write(PopoverView(store: welcome), scheme: scheme, to: "\(dir)/popover-welcome-\(suffix).png")
-            write(SettingsView(store: list, updater: Updater(previewVersion: nil)), scheme: scheme,
-                  to: "\(dir)/settings-\(suffix).png")
+            write(GeneralSettings(updater: Updater(previewVersion: nil)), scheme: scheme,
+                  to: "\(dir)/settings-general-\(suffix).png")
+            write(ProjectSettings(store: list), scheme: scheme, to: "\(dir)/settings-projects-\(suffix).png")
             write(PopoverView(store: empty, updater: Updater(previewVersion: "0.5")), scheme: scheme,
                   to: "\(dir)/popover-update-\(suffix).png")
             writeIcons(scheme: scheme, to: "\(dir)/menubar-icons-\(suffix).png")
