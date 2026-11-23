@@ -72,5 +72,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         statusMenu.install()
         Updater.shared.start()
+        Notifier.shared.start()
     }
 }

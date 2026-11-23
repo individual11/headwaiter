@@ -63,6 +63,7 @@ enum Snapshots {
             write(PopoverView(store: welcome), scheme: scheme, to: "\(dir)/popover-welcome-\(suffix).png")
             write(GeneralSettings(updater: Updater(previewVersion: nil)), scheme: scheme,
                   to: "\(dir)/settings-general-\(suffix).png")
+            write(NotificationSettings(), scheme: scheme, to: "\(dir)/settings-notifications-\(suffix).png")
             write(ProjectSettings(store: list), scheme: scheme, to: "\(dir)/settings-projects-\(suffix).png")
             write(PopoverView(store: empty, updater: Updater(previewVersion: "0.5")), scheme: scheme,
                   to: "\(dir)/popover-update-\(suffix).png")

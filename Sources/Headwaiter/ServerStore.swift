@@ -32,6 +32,11 @@ enum Preferences {
     /// When the project files have no icon, ask the running server for /favicon.ico. On by default.
     static let fetchFaviconsKey = "fetchFavicons"
     static var fetchFavicons: Bool { UserDefaults.standard.object(forKey: fetchFaviconsKey) as? Bool ?? true }
+    /// Notify when a server starts, or stops by itself. Off by default.
+    static let notifyStartedKey = "notifyStarted"
+    static var notifyStarted: Bool { UserDefaults.standard.bool(forKey: notifyStartedKey) }
+    static let notifyStoppedKey = "notifyStopped"
+    static var notifyStopped: Bool { UserDefaults.standard.bool(forKey: notifyStoppedKey) }
 }
 
 /// Polls the scanner, publishes the visible servers, runs Stop, and keeps history.
@@ -90,6 +95,8 @@ final class ServerStore {
     /// Server IDs at the last popover close (or first scan): the baseline for the dot.
     @ObservationIgnored private var baselineIDs: Set<Server.ID> = []
     @ObservationIgnored private var appStoppedIDs: Set<Server.ID> = []
+    /// Runs even with notifications off, so turning them on doesn't report old news.
+    @ObservationIgnored private var changeTracker = ChangeTracker()
 
     init(live: Bool = true) {
         isLive = live
@@ -177,6 +184,31 @@ final class ServerStore {
         }
         if isLive { favicons.update(servers: servers, containers: containers, gated: !state.hasSeenWelcome) }
         updateChangeDot()
+        if isLive { notifyChanges() }
+    }
+
+    private func notifyChanges() {
+        let hidden = state.hidden
+        let items = allServers.map { server in
+            RunningItem(id: server.id, key: "\(server.package.path):\(server.primaryPort)",
+                        name: server.package.name, project: server.project.displayName,
+                        port: server.primaryPort, url: url(for: server), startTime: server.startTime,
+                        isHidden: hidden.hides(server))
+        } + allContainers.map { container in
+            RunningItem(id: container.id, key: "container:\(container.name):\(container.primaryPort)",
+                        name: container.name, project: container.project?.displayName ?? "Docker",
+                        port: container.primaryPort, url: container.isHTTP ? container.url : nil,
+                        startTime: container.startTime, isHidden: hidden.hides(container))
+        }
+        let changes = changeTracker.update(items, now: Date().timeIntervalSince1970)
+        // With the popover open, the change is already on screen.
+        if !changes.isEmpty && !isPopoverOpen { Notifier.shared.post(changes) }
+    }
+
+    /// Stopping failed: say so on the row, and let a later exit count as news.
+    private func stopFailed(_ id: String, _ message: String) {
+        stopStates[id] = .failed(message)
+        changeTracker.stopFailed(id: id)
     }
 
     private func publishVisible() {
@@ -309,10 +341,11 @@ final class ServerStore {
         if stopStates[id] == .stopping { return }
         stopStates[id] = .stopping
         appStoppedIDs.insert(id)
+        changeTracker.willStop(id: id)
         Task {
             let ok = await Task.detached { DockerSocketSource().stop(id, kill: false) }.value
             log("stop container \(container.name): \(ok)")
-            if ok { restart() } else { stopStates[id] = .failed("Docker didn't stop the container") }
+            if ok { restart() } else { stopFailed(id, "Docker didn't stop the container") }
         }
     }
 
@@ -364,6 +397,7 @@ final class ServerStore {
         if stopStates[id] == .stopping { return }
         stopStates[id] = .stopping
         appStoppedIDs.insert(id)
+        changeTracker.willStop(id: id)
 
         Task {
             let outcome = await Task.detached { () -> SignalOutcome in
@@ -380,7 +414,7 @@ final class ServerStore {
             case .gone:
                 restart()
             case .failed(let message):
-                stopStates[id] = .failed(message)
+                stopFailed(id, message)
             case .signalled(let plan):
                 try? await Task.sleep(for: Self.forceQuitDelay)
                 guard stopStates[id] == .stopping else { return }
@@ -406,7 +440,7 @@ final class ServerStore {
             let result = await Task.detached { Stopper.signal(SIGKILL, plan, source: LiveProcessSource()) }.value
             log("force quit: \(result)")
             if case .failure(let f) = result, f != .alreadyExited {
-                stopStates[id] = .failed(f.description)
+                stopFailed(id, f.description)
             } else {
                 restart()
             }
