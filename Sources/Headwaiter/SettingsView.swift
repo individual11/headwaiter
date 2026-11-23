@@ -87,6 +87,7 @@ struct NotificationSettings: View {
                 Text("Hidden ports and projects never notify. Nothing is shown while the list is open.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
