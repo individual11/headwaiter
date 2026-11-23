@@ -115,4 +115,7 @@ cp "$notes" "$feed/Headwaiter-$version.md"
     --maximum-deltas 0 --link "https://individual11.com/headwaiter" \
     --download-url-prefix "https://github.com/individual11/headwaiter/releases/download/v$version/" "$feed"
 grep -q "sparkle:edSignature" "$feed/appcast.xml" || fail "The feed isn't signed."
-print -P "\n%F{green}✓ Ready to publish: $feed/Headwaiter-$version.dmg and $feed/appcast.xml%f"
+# The same DMG under a name that never changes, for the website's download link. Added after the
+# feed is written, so the feed only lists the versioned one.
+cp "$dmg" "$feed/Headwaiter.dmg"
+print -P "\n%F{green}✓ Ready to publish, all three from $feed: Headwaiter-$version.dmg, Headwaiter.dmg, appcast.xml%f"
