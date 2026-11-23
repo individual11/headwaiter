@@ -98,7 +98,7 @@ struct OpenAtLoginRow: View {
     @State private var error: String?
 
     var body: some View {
-        Toggle(isOn: Binding(get: { status == .enabled || status == .requiresApproval }, set: set)) {
+        Toggle(isOn: Binding(get: { status == .enabled || status == .requiresApproval }, set: { set($0) })) {
             Text("Open at Login")
             if status == .requiresApproval {
                 Text("Waiting for approval in System Settings › Login Items.")
