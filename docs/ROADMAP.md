@@ -3,7 +3,6 @@
 Roughly in order. Open an issue to argue for something, or if you want to build one.
 
 **Release**
-- Automatic updates (Sparkle)
 - Public notarized DMG
 - One-page website
 

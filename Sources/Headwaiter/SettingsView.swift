@@ -5,6 +5,7 @@ import SwiftUI
 
 struct SettingsView: View {
     let store: ServerStore
+    var updater = Updater.shared
     @AppStorage(Preferences.autoForceQuitKey) private var autoForceQuit = false
     @AppStorage(AppAppearance.key) private var appearance: AppAppearance = .system
     @AppStorage(Preferences.showFaviconsKey) private var showFavicons = true
@@ -42,6 +43,16 @@ struct SettingsView: View {
                 Toggle(isOn: $autoForceQuit) {
                     Text("Force quit automatically")
                     Text("When a server is still running 3 seconds after Stop, force quit it instead of showing the Force Quit button.")
+                }
+            }
+
+            if updater.isAvailable {
+                Section("Updates") {
+                    Toggle(isOn: Binding(get: { updater.checksAutomatically }, set: { updater.setChecksAutomatically($0) })) {
+                        Text("Check for updates automatically")
+                        Text("Asks GitHub once a day for a newer version. Nothing is installed without asking.")
+                    }
+                    Button("Check for Updates…") { updater.checkForUpdates() }
                 }
             }
 
