@@ -26,13 +26,13 @@ Never commit certificates, private keys or passwords.
 1. In `scripts/build-app.sh`, raise `version` and `build` (Sparkle compares `build`).
 2. Write `docs/releases/<version>.md`. It becomes the GitHub release notes and what Sparkle shows.
 3. Merge to `main`, then run `scripts/release.sh`. Test the DMG it prints.
-4. Create the release with both files, using the tag `v<version>`:
+4. Create the release with all three files, using the tag `v<version>`:
 
 ```bash
-gh release create v0.4 build/updates/Headwaiter-0.4.dmg build/updates/appcast.xml --title "Headwaiter 0.4" --notes-file docs/releases/0.4.md
+gh release create v0.4 build/updates/Headwaiter-0.4.dmg build/updates/Headwaiter.dmg build/updates/appcast.xml --title "Headwaiter 0.4" --notes-file docs/releases/0.4.md
 ```
 
-- **Both files, every time.** Installed copies read `releases/latest/download/appcast.xml`, so a latest release without it breaks update checks.
+- **All three files, every time.** Installed copies read `releases/latest/download/appcast.xml`, and the website links to `releases/latest/download/Headwaiter.dmg`. A latest release missing one breaks update checks or the download.
 - **Don't mark it as a pre-release,** even for a beta. GitHub's `latest` skips those.
 - **Don't edit `appcast.xml`.** Its signature would no longer match.
 
