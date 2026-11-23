@@ -71,5 +71,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do { print(try Diagnostics.capture().path); exit(0) } catch { print(error); exit(1) }
         }
         statusMenu.install()
+        Updater.shared.start()
     }
 }

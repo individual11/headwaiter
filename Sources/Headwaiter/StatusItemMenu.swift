@@ -1,6 +1,7 @@
 import AppKit
 
-/// Right-click (or Control-click) on the menu bar icon shows Settings…, About and Quit.
+/// Right-click (or Control-click) on the menu bar icon shows Settings…, updates, About,
+/// Capture Diagnostics and Quit.
 ///
 /// SwiftUI's MenuBarExtra has no right-click hook, so this watches the app's own mouse
 /// events and catches right-clicks on its status bar button before MenuBarExtra sees them.
@@ -29,6 +30,10 @@ final class StatusItemMenu: NSObject {
         guard let view = event.window?.contentView else { return }
         let menu = NSMenu()
         menu.addItem(item("Settings…", #selector(openSettings), key: ","))
+        if Updater.shared.isAvailable {
+            let title = Updater.shared.availableVersion.map { "Update to \($0)…" } ?? "Check for Updates…"
+            menu.addItem(item(title, #selector(checkForUpdates)))
+        }
         menu.addItem(item("About Headwaiter", #selector(openAbout)))
         menu.addItem(.separator())
         let capture = item("Capture Diagnostics", #selector(captureDiagnostics))
@@ -51,6 +56,10 @@ final class StatusItemMenu: NSObject {
         // The SwiftUI Settings scene responds to this action, as the app menu's Settings item does.
         NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         SettingsWindow.bringToFront()
+    }
+
+    @objc private func checkForUpdates() {
+        Updater.shared.checkForUpdates()
     }
 
     @objc private func openAbout() {

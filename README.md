@@ -31,9 +31,10 @@ Projects are found from the nearest workspace root, git root or manifest (`packa
 - A server listening on more than one port shows a **+N** chip. Click it to list the other ports under the row, each one clickable.
 - Stop sends SIGTERM to the server's whole process tree, then offers Force Quit (SIGKILL) after 3 s. The force quit can be made automatic.
 - Recently stopped list, a NEW dot on servers started since you last looked, and a menu bar dot when something changed.
-- Settings: Open at Login, Appearance (System, Light, Dark), project icons, automatic force quit, privacy status, hidden items.
-- Right-click the menu bar icon for Settings, About, Capture Diagnostics and Quit.
-- Nothing leaves your Mac. The only network requests go to your own servers, and redirects are never followed.
+- Settings: Open at Login, Appearance (System, Light, Dark), project icons, automatic force quit, updates, privacy status, hidden items.
+- Right-click the menu bar icon for Settings, updates, About, Capture Diagnostics and Quit.
+- What Headwaiter sees stays on your Mac: no account, no analytics. It connects only to your own servers (redirects are never followed) and, for updates, to GitHub.
+- Release builds update themselves with [Sparkle](https://sparkle-project.org). They ask before checking automatically and before installing anything. Builds from source never check.
 
 ## Status
 
@@ -83,6 +84,7 @@ swift test
 - `Sources/Headwaiter`: menu bar app.
   - `ServerStore`: polling, stop, history.
   - `FaviconStore`: project icons.
+  - `Updater`: Sparkle, the app's only dependency.
   - `PopoverView`, `SettingsView`, `MenuBarIcon`.
 - `scripts/`: app bundling, dev signing, icon, release.
 - `Tests/HeadwaiterCoreTests`: fixture-driven tests (Swift Testing). `Fixtures/` holds captures from real machines.

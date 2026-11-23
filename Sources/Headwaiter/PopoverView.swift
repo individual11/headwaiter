@@ -17,6 +17,7 @@ enum Layout {
 
 struct PopoverView: View {
     let store: ServerStore
+    var updater = Updater.shared
     @State private var listHeight: CGFloat = 0
     @State private var showHistory = false
 
@@ -164,7 +165,9 @@ struct PopoverView: View {
 
     private var footer: some View {
         HStack(spacing: 6) {
-            if store.showCopyHint {
+            if let version = updater.availableVersion {
+                UpdateButton(version: version, updater: updater)
+            } else if store.showCopyHint {
                 Image(systemName: "lightbulb").font(.system(size: 10))
                 Text("Option-click a server to copy its URL")
             }
@@ -199,7 +202,7 @@ struct WelcomeCard: View {
                     Text("Every dev server on your Mac, by project.").font(.system(size: 11)).foregroundStyle(.secondary)
                 }
             }
-            Text("To show project names, Headwaiter reads files like package.json in your project folders. macOS will ask once for folders such as Desktop or Documents. Nothing leaves your Mac.")
+            Text("To show project names, Headwaiter reads files like package.json in your project folders. macOS will ask once for folders such as Desktop or Documents. What it reads never leaves your Mac.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1118,6 +1121,26 @@ enum SettingsWindow {
     private static func isSettings(_ window: NSWindow) -> Bool {
         // SwiftUI's Settings scene window identifier is "com_apple_SwiftUI_Settings_window".
         window.identifier?.rawValue.contains("Settings") == true
+    }
+}
+
+/// Shown in the footer when a newer version was found in the background.
+struct UpdateButton: View {
+    let version: String
+    let updater: Updater
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        Button {
+            dismiss()
+            updater.checkForUpdates()
+        } label: {
+            Label("Update to \(version)", systemImage: "arrow.down.circle.fill")
+                .font(.system(size: 11, weight: .medium))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.accentColor)
+        .help("See what's new and install it")
     }
 }
 
