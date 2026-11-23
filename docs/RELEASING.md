@@ -29,7 +29,7 @@ Never commit certificates, private keys or passwords.
 4. Create the release with all three files, using the tag `v<version>`:
 
 ```bash
-gh release create v0.4 build/updates/Headwaiter-0.4.dmg build/updates/Headwaiter.dmg build/updates/appcast.xml --title "Headwaiter 0.4" --notes-file docs/releases/0.4.md
+gh release create v0.5 build/updates/Headwaiter-0.5.dmg build/updates/Headwaiter.dmg build/updates/appcast.xml --title "Headwaiter 0.5" --notes-file docs/releases/0.5.md
 ```
 
 - **All three files, every time.** Installed copies read `releases/latest/download/appcast.xml`, and the website links to `releases/latest/download/Headwaiter.dmg`. A latest release missing one breaks update checks or the download.
