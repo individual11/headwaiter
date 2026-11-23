@@ -2,9 +2,6 @@
 
 Roughly in order. Open an issue to argue for something, or if you want to build one.
 
-**Release**
-- One-page website
-
 **Daily use**
 - Keyboard navigation and type-to-filter
 - Reveal in Finder, open in terminal, open in editor
@@ -16,7 +13,7 @@ Roughly in order. Open an issue to argue for something, or if you want to build 
 
 **Bigger features**
 - Start and restart a server from its stored command
-- Logs for servers Headwaiter started
+- Output logs for servers Headwaiter started
 - Global hotkey
 - A group for watchers and builds that don't listen on a port
 - More runtimes: PHP/Laravel, JVM/Spring Boot, Rust, local databases, Elixir/Phoenix, .NET

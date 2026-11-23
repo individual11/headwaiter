@@ -55,6 +55,8 @@ enum Snapshots {
         let welcome = ServerStore(live: false)
         welcome.preview(servers: Array(servers.prefix(2)), welcome: true)
 
+        let log = LogStore(previewLines: sampleLog(from: servers, now: now))
+
         for scheme in [ColorScheme.light, .dark] {
             let suffix = scheme == .light ? "light" : "dark"
             write(PopoverView(store: list), scheme: scheme, to: "\(dir)/popover-list-\(suffix).png")
@@ -65,6 +67,8 @@ enum Snapshots {
                   to: "\(dir)/settings-general-\(suffix).png")
             write(NotificationSettings(), scheme: scheme, to: "\(dir)/settings-notifications-\(suffix).png")
             write(ProjectSettings(store: list), scheme: scheme, to: "\(dir)/settings-projects-\(suffix).png")
+            write(LogSettings(log: log), scheme: scheme, to: "\(dir)/settings-log-\(suffix).png")
+            write(LogView(log: log).frame(width: 860, height: 260), scheme: scheme, to: "\(dir)/log-\(suffix).png")
             write(PopoverView(store: empty, updater: Updater(previewVersion: "0.5")), scheme: scheme,
                   to: "\(dir)/popover-update-\(suffix).png")
             writeIcons(scheme: scheme, to: "\(dir)/menubar-icons-\(suffix).png")
@@ -222,6 +226,18 @@ enum Snapshots {
                             Ports: [.init(IP: "0.0.0.0", PrivatePort: 80, PublicPort: 8088, Type: "tcp")], Labels: [:]),
         ]
         return ContainerResolver.servers(from: raw)
+    }
+
+    static func sampleLog(from servers: [Server], now: Double) -> [String] {
+        let items = servers.map { s in
+            LogItem(id: s.id, key: s.id, name: s.package.name, project: s.project.displayName,
+                    kind: s.framework?.name ?? s.runtime, port: s.primaryPort, process: ProcessIdentity(s.root),
+                    path: s.package.path, startTime: s.startTime)
+        }
+        let starts = items.map { LogEvent(.started, $0, time: $0.startTime) }.sorted { $0.time < $1.time }
+        let sources: [LogEvent.StopSource?] = [nil, .headwaiter, .forceQuit]
+        let stops = zip(items, sources).map { LogEvent(.stopped($1), $0, time: now) }
+        return (starts + stops).map { $0.line() }
     }
 
     static func sampleHistory(from servers: [Server], now: Double) -> [StoppedServer] {

@@ -37,6 +37,9 @@ enum Preferences {
     static var notifyStarted: Bool { UserDefaults.standard.bool(forKey: notifyStartedKey) }
     static let notifyStoppedKey = "notifyStopped"
     static var notifyStopped: Bool { UserDefaults.standard.bool(forKey: notifyStoppedKey) }
+    /// Keep a log of starts and stops. Off by default.
+    static let keepLogKey = "keepLog"
+    static var keepLog: Bool { UserDefaults.standard.bool(forKey: keepLogKey) }
 }
 
 /// Polls the scanner, publishes the visible servers, runs Stop, and keeps history.
@@ -90,6 +93,8 @@ final class ServerStore {
     @ObservationIgnored private var wakeObserver: NSObjectProtocol?
     @ObservationIgnored private var exitWatcher: ExitWatcher?
     @ObservationIgnored private var exitRefresh: Task<Void, Never>?
+    @ObservationIgnored private var scansStarted = 0
+    @ObservationIgnored private var lastAppliedScan = 0
     /// Popover-close time; servers that started after it are NEW. nil until the first close.
     @ObservationIgnored private(set) var lastClosedAt: Date?
     /// Server IDs at the last popover close (or first scan): the baseline for the dot.
@@ -97,6 +102,8 @@ final class ServerStore {
     @ObservationIgnored private var appStoppedIDs: Set<Server.ID> = []
     /// Runs even with notifications off, so turning them on doesn't report old news.
     @ObservationIgnored private var changeTracker = ChangeTracker()
+    /// Also runs with the log off, for the same reason.
+    @ObservationIgnored private var logTracker = LogTracker()
 
     init(live: Bool = true) {
         isLive = live
@@ -154,14 +161,20 @@ final class ServerStore {
 
     func refresh() async {
         let start = ContinuousClock.now
+        scansStarted += 1
+        let scan = scansStarted
         let gated = !state.hasSeenWelcome
         let (result, found) = await Task.detached(priority: .utility) {
             (Self.scan(gateProtectedFolders: gated), Self.scanContainers())
         }.value
+        // A rescan can overtake a slower one; its older picture would look like stops and starts.
+        guard scan > lastAppliedScan else { return }
+        lastAppliedScan = scan
         let firstScan = lastScan == nil
         lastScan = Date()
-        log("scan: \(result.count) servers, \(found.count) containers in \(ContinuousClock.now - start), open=\(isPopoverOpen)")
-        apply(result, containers: found, firstScan: firstScan)
+        log("scan: \(result.count) servers, \(found?.count ?? 0) containers in \(ContinuousClock.now - start), open=\(isPopoverOpen)")
+        apply(result, containers: found ?? [], firstScan: firstScan)
+        logChanges(dockerAnswered: found != nil)
     }
 
     private func apply(_ result: [Server], containers found: [ContainerServer], firstScan: Bool = false) {
@@ -205,10 +218,32 @@ final class ServerStore {
         if !changes.isEmpty && !isPopoverOpen { Notifier.shared.post(changes) }
     }
 
+    private func logChanges(dockerAnswered: Bool) {
+        let hidden = state.hidden
+        let items = allServers.map { server in
+            LogItem(id: server.id, key: "\(server.package.path):\(server.primaryPort)",
+                    name: server.package.name, project: server.project.displayName,
+                    kind: server.framework?.name ?? server.runtime, port: server.primaryPort,
+                    process: ProcessIdentity(server.root), path: server.package.path,
+                    startTime: server.startTime, isHidden: hidden.hides(server))
+        } + allContainers.map { container in
+            LogItem(id: container.id, key: "container:\(container.name):\(container.primaryPort)",
+                    name: container.name, project: container.project?.displayName ?? "Docker",
+                    kind: container.imageShortName, port: container.primaryPort,
+                    startTime: container.startTime, isHidden: hidden.hides(container))
+        }
+        let processes = LiveProcessSource()
+        let events = logTracker.update(items, now: Date().timeIntervalSince1970) { item in
+            item.process.map { $0.isAlive(in: processes) } ?? !dockerAnswered
+        }
+        if Preferences.keepLog { LogStore.shared.append(events) }
+    }
+
     /// Stopping failed: say so on the row, and let a later exit count as news.
     private func stopFailed(_ id: String, _ message: String) {
         stopStates[id] = .failed(message)
         changeTracker.stopFailed(id: id)
+        logTracker.stopFailed(id: id)
     }
 
     private func publishVisible() {
@@ -297,9 +332,9 @@ final class ServerStore {
         return Resolver(fs: fs).resolve(LiveProcessSource()).servers
     }
 
-    /// Docker containers with published ports, or none if Docker isn't running.
-    nonisolated static func scanContainers() -> [ContainerServer] {
-        DockerSocketSource().runningContainers().map(ContainerResolver.servers) ?? []
+    /// Docker containers with published ports; nil if Docker isn't running or didn't answer.
+    nonisolated static func scanContainers() -> [ContainerServer]? {
+        DockerSocketSource().runningContainers().map(ContainerResolver.servers)
     }
 
     /// Project root for containers that aren't part of a Compose project.
@@ -342,6 +377,7 @@ final class ServerStore {
         stopStates[id] = .stopping
         appStoppedIDs.insert(id)
         changeTracker.willStop(id: id)
+        logTracker.willStop(id: id, .headwaiter)
         Task {
             let ok = await Task.detached { DockerSocketSource().stop(id, kill: false) }.value
             log("stop container \(container.name): \(ok)")
@@ -398,6 +434,7 @@ final class ServerStore {
         stopStates[id] = .stopping
         appStoppedIDs.insert(id)
         changeTracker.willStop(id: id)
+        logTracker.willStop(id: id, .headwaiter)
 
         Task {
             let outcome = await Task.detached { () -> SignalOutcome in
@@ -436,6 +473,7 @@ final class ServerStore {
 
     private func forceQuit(id: Server.ID, _ plan: StopPlan) {
         stopStates[id] = .stopping
+        logTracker.willStop(id: id, .forceQuit)
         Task {
             let result = await Task.detached { Stopper.signal(SIGKILL, plan, source: LiveProcessSource()) }.value
             log("force quit: \(result)")

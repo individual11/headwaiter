@@ -12,10 +12,11 @@ struct SettingsView: View {
             Tab("General", systemImage: "gearshape") { GeneralSettings() }
             Tab("Notifications", systemImage: "bell") { NotificationSettings() }
             Tab("Projects", systemImage: "folder") { ProjectSettings(store: store) }
+            Tab("Log", systemImage: "list.bullet.rectangle") { LogSettings() }
         }
         // On the whole window: a tab's own onDisappear fires when you switch tabs.
-        .onAppear { DockPresence.settingsOpened() }
-        .onDisappear { DockPresence.settingsClosed() }
+        .onAppear { DockPresence.opened(.settings) }
+        .onDisappear { DockPresence.closed(.settings) }
     }
 }
 
@@ -170,6 +171,37 @@ struct ProjectSettings: View {
             }
         }
         .settingsTab()
+    }
+}
+
+struct LogSettings: View {
+    var log = LogStore.shared
+    @AppStorage(Preferences.keepLogKey) private var keepLog = false
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $keepLog) {
+                    Text("Keep a log")
+                    Text("Adds a line whenever a server starts or stops while Headwaiter is running. Hidden ports and projects aren't logged.")
+                }
+            }
+
+            Section {
+                LabeledContent {
+                    Button("Clear…") { log.confirmClear() }.disabled(log.lines.isEmpty)
+                    Button("Open Log") { LogWindow.show() }
+                } label: {
+                    Text(LogView.entries(log.lines.count))
+                    Text("Kept on this Mac, up to 1 MB. The oldest entries are dropped first.")
+                }
+                if let error = log.error {
+                    Label("Couldn't update the log: \(error)", systemImage: "exclamationmark.triangle.fill")
+                }
+            }
+        }
+        .settingsTab()
+        .onAppear { log.reload() }
     }
 }
 
