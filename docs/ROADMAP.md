@@ -17,7 +17,7 @@ Roughly in order. Open an issue to argue for something, or if you want to build 
 - More runtimes: PHP/Laravel, JVM/Spring Boot, Rust, local databases, Elixir/Phoenix, .NET
 - Apple `container`, once it has a stable API to read
 
-**Maybe, if it fits**
+**Out of scope**
 - Port lookup for any process ("who has port 3000?")
 
 **Help wanted: real captures.** Docker, Go, most Python setups, turbo and nx are mostly covered by hand-written tests. See [CONTRIBUTING](../CONTRIBUTING.md#captures) for how to send one safely.
