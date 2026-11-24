@@ -40,6 +40,9 @@ enum Preferences {
     /// Keep a log of starts and stops. Off by default.
     static let keepLogKey = "keepLog"
     static var keepLog: Bool { UserDefaults.standard.bool(forKey: keepLogKey) }
+    /// Bundle identifier of the terminal to open folders in; empty for the Mac's default.
+    static let terminalKey = "terminal"
+    static var terminal: String { UserDefaults.standard.string(forKey: terminalKey) ?? "" }
 }
 
 /// Polls the scanner, publishes the visible servers, runs Stop, and keeps history.

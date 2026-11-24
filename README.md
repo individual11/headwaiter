@@ -28,12 +28,13 @@ Projects are found from the nearest workspace root, git root or manifest (`packa
 
 - Live list, grouped into project cards, refreshed every 2 s while open and 5 s otherwise, and immediately when a server exits.
 - Click to open, Option-click to copy the URL. Right-click to set a custom URL, or to hide a port or project.
+- Right-click a server or project to reveal its folder in Finder or open it in your terminal. Choose which terminal in Settings.
 - A server listening on more than one port shows a **+N** chip. Click it to list the other ports under the row, each one clickable.
 - Stop sends SIGTERM to the server's whole process tree, then offers Force Quit (SIGKILL) after 3 s. The force quit can be made automatic.
 - Recently stopped list, a NEW dot on servers started since you last looked, and a menu bar dot when something changed.
 - Optional notifications when a server starts, or stops without you stopping it. Restarts and short test runs stay quiet.
 - Optional log: one line for each start and stop, with how long the server ran and whether Headwaiter stopped it. Filter it in its own window and clear it any time. It's a text file, `~/Library/Logs/Headwaiter/servers.log`.
-- Settings: Open at Login, Appearance (System, Light, Dark), project icons, automatic force quit, updates, notifications, folder access, hidden items, log.
+- Settings: Open at Login, Appearance (System, Light, Dark), project icons, terminal, automatic force quit, updates, notifications, folder access, hidden items, log.
 - Right-click the menu bar icon for Settings, updates, About, Capture Diagnostics and Quit.
 - What Headwaiter sees stays on your Mac: no account, no analytics. It connects only to your own servers (redirects are never followed) and, for updates, to GitHub.
 - Release builds update themselves with [Sparkle](https://sparkle-project.org). They ask before checking automatically and before installing anything. Builds from source never check.
@@ -94,6 +95,7 @@ swift test
   - `FaviconStore`: project icons.
   - `Notifier`: start and stop notifications.
   - `LogStore`, `LogWindow`: the log and its window.
+  - `TerminalApps`: which terminal folders open in.
   - `Updater`: Sparkle, the app's only dependency.
   - `PopoverView`, `SettingsView`, `MenuBarIcon`.
 - `scripts/`: app bundling, dev signing, icon, release.
