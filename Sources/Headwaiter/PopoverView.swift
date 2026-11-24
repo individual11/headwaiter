@@ -18,6 +18,8 @@ enum Layout {
 struct PopoverView: View {
     let store: ServerStore
     var updater = Updater.shared
+    @State var keyboard = PopoverKeyboard()
+    @Environment(\.dismiss) private var dismiss
     @State private var listHeight: CGFloat = 0
     @State private var showHistory = false
 
@@ -29,8 +31,15 @@ struct PopoverView: View {
                     .padding(.horizontal, Layout.cardInset)
                     .padding(.bottom, 8)
             }
+            if !keyboard.filter.isEmpty {
+                FilterBar(keyboard: keyboard, matches: groups.reduce(0) { $0 + $1.servers.count + $1.containers.count })
+                    .padding(.horizontal, Layout.cardInset)
+                    .padding(.bottom, 8)
+            }
             if store.lastScan != nil && store.isEmpty {
                 emptyContent
+            } else if groups.isEmpty && !keyboard.filter.isEmpty {
+                noMatches
             } else {
                 scrollingList
             }
@@ -48,12 +57,21 @@ struct PopoverView: View {
             Button("") { NSApp.terminate(nil) }.keyboardShortcut("q").hidden()
         }
         .fitWindowToContent()
+        .background(WindowAccessor { keyboard.attach($0) })
+        .onChange(of: keyboard.items(in: store).map(\.id)) { old, new in keyboard.itemsChanged(from: old, to: new) }
+        .environment(keyboard)
         .onAppear {
             store.isPopoverOpen = true
             TerminalApps.shared.refresh()
+            if Snapshots.directory == nil { keyboard.start(store: store) { dismiss() } }
         }
-        .onDisappear { store.isPopoverOpen = false }
+        .onDisappear {
+            store.isPopoverOpen = false
+            keyboard.stop()
+        }
     }
+
+    private var groups: [ProjectGroup] { keyboard.groups(in: store) }
 
     // MARK: Header
 
@@ -94,19 +112,26 @@ struct PopoverView: View {
 
     /// Grows with content, then scrolls; measured, so the height never jumps.
     private var scrollingList: some View {
-        ScrollView {
-            VStack(spacing: 8) {
-                ForEach(store.groups) { group in
-                    ProjectCard(group: group, store: store)
+        ScrollViewReader { scroll in
+            ScrollView {
+                VStack(spacing: 8) {
+                    ForEach(groups) { group in
+                        ProjectCard(group: group, store: store)
+                    }
+                    if !store.recentlyStopped.isEmpty && keyboard.filter.isEmpty {
+                        HistoryCard(store: store, collapsible: true, expanded: $showHistory)
+                    }
                 }
-                if !store.recentlyStopped.isEmpty {
-                    HistoryCard(store: store, collapsible: true, expanded: $showHistory)
-                }
+                .padding(.horizontal, Layout.cardInset)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listHeight = $0 }
             }
-            .padding(.horizontal, Layout.cardInset)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listHeight = $0 }
+            .onChange(of: keyboard.selection) { _, id in
+                if let id { scroll.scrollTo(id) }
+            }
         }
         .scrollBounceBehavior(.basedOnSize)
+        // Room for the fade below, so it never covers the last row or the keyboard selection.
+        .contentMargins(.bottom, listHeight > Layout.maxListHeight ? 24 : 0, for: .scrollContent)
         .frame(height: min(max(listHeight, 1), Layout.maxListHeight))
         // When the list scrolls, fade the bottom edge so a cut-off card reads as "more below".
         .mask {
@@ -117,6 +142,16 @@ struct PopoverView: View {
                     .frame(height: 24)
             }
         }
+    }
+
+    private var noMatches: some View {
+        Text("No servers match")
+            .font(.system(size: 12))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 18)
+            .background(Card())
+            .padding(.horizontal, Layout.cardInset)
     }
 
     @ViewBuilder private var emptyContent: some View {
@@ -172,7 +207,8 @@ struct PopoverView: View {
                 UpdateButton(version: version, updater: updater)
             } else if store.showCopyHint {
                 Image(systemName: "lightbulb").font(.system(size: 10))
-                Text("Option-click a server to copy its URL")
+                Text(store.state.popoverOpenCount.isMultiple(of: 2)
+                     ? "Type to filter, ↑↓ and Return to open" : "Option-click a server to copy its URL")
             }
             Spacer(minLength: 8)
             QuitButton()
@@ -325,12 +361,14 @@ struct ServerRow: View {
     let store: ServerStore
     @State private var hovered = false
     @State private var stopHovered = false
-    @State private var copied = false
+    @Environment(PopoverKeyboard.self) private var keyboard
     @Environment(\.dismiss) private var dismiss
 
     private var stopState: StopState? { store.stopStates[server.id] }
     private var isStopping: Bool { stopState == .stopping }
-    private var showHover: Bool { hovered && !isStopping }
+    private var copied: Bool { keyboard.copiedID == server.id }
+    private var selected: Bool { keyboard.selection == server.id }
+    private var showHover: Bool { (hovered || selected) && !isStopping }
     private var url: URL { store.url(for: server) }
     private var expanded: Bool { store.isExpanded(server.id) && !server.secondaryPorts.isEmpty }
 
@@ -338,7 +376,7 @@ struct ServerRow: View {
         VStack(alignment: .leading, spacing: 0) {
             mainRow
             if expanded {
-                OtherPortsList(ports: server.secondaryPorts.map { ($0, server.url(port: $0)) }, store: store) {
+                OtherPortsList(row: server.id, ports: server.secondaryPorts.map { ($0, server.url(port: $0)) }, store: store) {
                     store.toggleExpanded(server.id)
                 }
             }
@@ -357,15 +395,16 @@ struct ServerRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(RoundedRectangle(cornerRadius: Layout.rowRadius, style: .continuous)
-            .fill(showHover ? Color.accentColor.opacity(0.12) : .clear))
+            .fill(RowHighlight.color(selected: selected, hovered: hovered && !isStopping)))
         .padding(.horizontal, 3)
+        .id(server.id)
         .onHover { hovered = $0 }
         .help("\(url.absoluteString)\n\(Display.command(server.root))")
         .contextMenu { menu }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
         .accessibilityHint("Opens \(url.absoluteString)")
-        .accessibilityAddTraits(.isButton)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction { activate() }
         .accessibilityAction(named: "Copy URL") { Actions.copy(url.absoluteString) }
         .accessibilityAction(named: "Reveal in Finder") { Actions.reveal(server.package.path) }
@@ -475,7 +514,7 @@ struct ServerRow: View {
             .accessibilityLabel("Force quit \(server.package.name)")
         default:
             // Hidden until the row is hovered: one click stops, so don't show a column of targets.
-            if hovered || stopHovered {
+            if hovered || selected || stopHovered {
                 Button { store.stop(server) } label: {
                     Image(systemName: stopHovered ? "stop.circle.fill" : "stop.circle")
                         .font(.system(size: 15))
@@ -532,12 +571,8 @@ struct ServerRow: View {
     private func activate() {
         if NSEvent.modifierFlags.contains(.option) {
             Actions.copy(url.absoluteString)
-            copied = true
+            keyboard.flashCopied(server.id)
             AccessibilityNotification.Announcement("Copied \(url.absoluteString)").post()
-            Task {
-                try? await Task.sleep(for: .seconds(1.2))
-                copied = false
-            }
         } else {
             Actions.open(url)
             dismiss()
@@ -551,12 +586,14 @@ struct ContainerRow: View {
     let store: ServerStore
     @State private var hovered = false
     @State private var stopHovered = false
-    @State private var copied = false
+    @Environment(PopoverKeyboard.self) private var keyboard
     @Environment(\.dismiss) private var dismiss
 
     private var stopState: StopState? { store.stopStates[container.id] }
     private var isStopping: Bool { stopState == .stopping }
-    private var showHover: Bool { hovered && !isStopping }
+    private var copied: Bool { keyboard.copiedID == container.id }
+    private var selected: Bool { keyboard.selection == container.id }
+    private var showHover: Bool { (hovered || selected) && !isStopping }
     static let dockerBlue = Color(red: 0.11, green: 0.39, blue: 0.93)
     private var expanded: Bool { store.isExpanded(container.id) && !container.secondaryPorts.isEmpty }
 
@@ -565,9 +602,7 @@ struct ContainerRow: View {
             mainRow
             if expanded {
                 // Databases and other non-HTTP services copy host:port instead of opening.
-                OtherPortsList(ports: container.secondaryPorts.map {
-                    ($0, container.isHTTP ? URL(string: "http://localhost:\($0)") : nil)
-                }, store: store) {
+                OtherPortsList(row: container.id, ports: container.secondaryPorts.map { ($0, container.url(port: $0)) }, store: store) {
                     store.toggleExpanded(container.id)
                 }
             }
@@ -585,14 +620,15 @@ struct ContainerRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(RoundedRectangle(cornerRadius: Layout.rowRadius, style: .continuous)
-            .fill(showHover ? Color.accentColor.opacity(0.12) : .clear))
+            .fill(RowHighlight.color(selected: selected, hovered: hovered && !isStopping)))
         .padding(.horizontal, 3)
+        .id(container.id)
         .onHover { hovered = $0 }
         .help("\(container.isHTTP ? container.url.absoluteString : container.address)\n\(container.image)")
         .contextMenu { menu }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(container.name), Docker container, \(container.imageShortName), port \(container.primaryPort)")
-        .accessibilityAddTraits(.isButton)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction { activate() }
         .accessibilityAction(named: "Stop") { store.stop(container) }
         .accessibilityActions {
@@ -675,7 +711,7 @@ struct ContainerRow: View {
     @ViewBuilder private var stopSlot: some View {
         if isStopping {
             ProgressView().controlSize(.mini)
-        } else if hovered || stopHovered {
+        } else if hovered || selected || stopHovered {
             Button { store.stop(container) } label: {
                 Image(systemName: stopHovered ? "stop.circle.fill" : "stop.circle")
                     .font(.system(size: 15))
@@ -716,11 +752,7 @@ struct ContainerRow: View {
             dismiss()
         } else {
             Actions.copy(container.isHTTP ? container.url.absoluteString : container.address)
-            copied = true
-            Task {
-                try? await Task.sleep(for: .seconds(1.2))
-                copied = false
-            }
+            keyboard.flashCopied(container.id)
         }
     }
 }
@@ -893,6 +925,13 @@ struct HistoryRow: View {
 
 // MARK: - Small pieces
 
+enum RowHighlight {
+    /// The keyboard selection is stronger than hover, so the two can be told apart.
+    static func color(selected: Bool, hovered: Bool) -> Color {
+        selected ? Color.accentColor.opacity(0.24) : hovered ? Color.accentColor.opacity(0.12) : .clear
+    }
+}
+
 /// Menu items for a project or package folder.
 struct FolderMenuItems: View {
     let folder: String
@@ -946,6 +985,7 @@ struct PortChip: View {
 /// A row's other ports, one line each, under the row. Click opens; Option-click copies.
 /// A nil URL means a non-HTTP service: clicking copies its address instead.
 struct OtherPortsList: View {
+    let row: String
     let ports: [(port: UInt16, url: URL?)]
     let store: ServerStore
     /// Closes the list (the row's Show/Hide Other Ports toggle).
@@ -954,7 +994,7 @@ struct OtherPortsList: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(ports, id: \.port) { item in
-                OtherPortRow(port: item.port, url: item.url, store: store, collapse: collapse)
+                OtherPortRow(row: row, port: item.port, url: item.url, store: store, collapse: collapse)
             }
         }
         .padding(.bottom, 2)
@@ -963,14 +1003,18 @@ struct OtherPortsList: View {
 }
 
 struct OtherPortRow: View {
+    let row: String
     let port: UInt16
     let url: URL?
     let store: ServerStore
     let collapse: () -> Void
     @State private var hovered = false
-    @State private var copied = false
+    @Environment(PopoverKeyboard.self) private var keyboard
     @Environment(\.dismiss) private var dismiss
 
+    private var id: String { ListItem.otherPortID(row, port) }
+    private var copied: Bool { keyboard.copiedID == id }
+    private var selected: Bool { keyboard.selection == id }
     private var target: String { url?.absoluteString ?? "localhost:\(port)" }
 
     var body: some View {
@@ -997,7 +1041,7 @@ struct OtherPortRow: View {
                         Image(systemName: url != nil ? "arrow.up.right" : "doc.on.doc")
                             .font(.system(size: 9, weight: .bold))
                             .foregroundStyle(.tint)
-                            .opacity(hovered ? 1 : 0)
+                            .opacity(hovered || selected ? 1 : 0)
                     }
                 }
             }
@@ -1010,8 +1054,9 @@ struct OtherPortRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
         .background(RoundedRectangle(cornerRadius: Layout.rowRadius, style: .continuous)
-            .fill(hovered ? Color.accentColor.opacity(0.12) : .clear))
+            .fill(RowHighlight.color(selected: selected, hovered: hovered)))
         .padding(.horizontal, 3)
+        .id(id)
         .onHover { hovered = $0 }
         .help(url != nil ? "Open \(target)\nOption-click to copy" : "Copy \(target)")
         .contextMenu {
@@ -1028,7 +1073,7 @@ struct OtherPortRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Other port \(port)")
         .accessibilityHint(url != nil ? "Opens \(target)" : "Copies \(target)")
-        .accessibilityAddTraits(.isButton)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction { activate() }
     }
 
@@ -1038,11 +1083,7 @@ struct OtherPortRow: View {
             dismiss()
         } else {
             Actions.copy(target)
-            copied = true
-            Task {
-                try? await Task.sleep(for: .seconds(1.2))
-                copied = false
-            }
+            keyboard.flashCopied(id)
         }
     }
 }

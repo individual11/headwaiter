@@ -3,7 +3,6 @@
 Roughly in order. Open an issue to argue for something, or if you want to build one.
 
 **Daily use**
-- Keyboard navigation and type-to-filter
 - Open in editor
 - A marker for orphaned servers (the terminal or agent that started them is gone)
 - Stop all, per project and globally
