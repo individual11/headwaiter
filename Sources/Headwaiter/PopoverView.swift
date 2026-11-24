@@ -31,11 +31,7 @@ struct PopoverView: View {
                     .padding(.horizontal, Layout.cardInset)
                     .padding(.bottom, 8)
             }
-            if !keyboard.filter.isEmpty {
-                FilterBar(keyboard: keyboard, matches: groups.reduce(0) { $0 + $1.servers.count + $1.containers.count })
-                    .padding(.horizontal, Layout.cardInset)
-                    .padding(.bottom, 8)
-            }
+            FilterBar(keyboard: keyboard, matches: groups.reduce(0) { $0 + $1.servers.count + $1.containers.count })
             if store.lastScan != nil && store.isEmpty {
                 emptyContent
             } else if groups.isEmpty && !keyboard.filter.isEmpty {
