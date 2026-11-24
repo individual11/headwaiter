@@ -62,7 +62,7 @@ final class WindowFitter {
     }
 }
 
-private struct WindowAccessor: NSViewRepresentable {
+struct WindowAccessor: NSViewRepresentable {
     let onWindow: @MainActor (NSWindow?) -> Void
 
     func makeNSView(context: Context) -> NSView { Tracker(onWindow: onWindow) }

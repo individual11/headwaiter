@@ -55,11 +55,15 @@ enum Snapshots {
         let welcome = ServerStore(live: false)
         welcome.preview(servers: Array(servers.prefix(2)), welcome: true)
 
+        let filtering = PopoverKeyboard()
+        filtering.preview(filter: "shop", selection: byName("@shop/api").id)
+
         let log = LogStore(previewLines: sampleLog(from: servers, now: now))
 
         for scheme in [ColorScheme.light, .dark] {
             let suffix = scheme == .light ? "light" : "dark"
             write(PopoverView(store: list), scheme: scheme, to: "\(dir)/popover-list-\(suffix).png")
+            write(PopoverView(store: list, keyboard: filtering), scheme: scheme, to: "\(dir)/popover-filter-\(suffix).png")
             write(PopoverView(store: emptyHistory), scheme: scheme, to: "\(dir)/popover-empty-history-\(suffix).png")
             write(PopoverView(store: empty), scheme: scheme, to: "\(dir)/popover-empty-\(suffix).png")
             write(PopoverView(store: welcome), scheme: scheme, to: "\(dir)/popover-welcome-\(suffix).png")
