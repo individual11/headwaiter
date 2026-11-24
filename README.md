@@ -29,7 +29,7 @@ Projects are found from the nearest workspace root, git root or manifest (`packa
 - Live list, grouped into project cards, refreshed every 2 s while open and 5 s otherwise, and immediately when a server exits.
 - Click to open, Option-click to copy the URL. Right-click to set a custom URL, or to hide a port or project.
 - Right-click a server or project to reveal its folder in Finder or open it in your terminal. Choose which terminal in Settings.
-- Keyboard: type to filter by name, project, framework or port. ↑↓ select, Return opens, ⌘C (or ⌥Return) copies the URL, ⌘R reveals the folder in Finder, ⌘T opens it in your terminal, ⌘⌫ stops, → and ← show and hide other ports, Esc backs out.
+- Keyboard: type (or ⌘F) to filter by name, project, framework or port. ↑↓ select, Return opens, ⌘C (or ⌥Return) copies the URL, ⌘R reveals the folder in Finder, ⌘T opens it in your terminal, ⌘⌫ stops, → and ← show and hide other ports, Esc backs out. While you're typing, ⌘⌫, ← and → edit the text; ↑ or ↓ moves into the list.
 - A server listening on more than one port shows a **+N** chip. Click it to list the other ports under the row, each one clickable.
 - Stop sends SIGTERM to the server's whole process tree, then offers Force Quit (SIGKILL) after 3 s. The force quit can be made automatic.
 - Recently stopped list, a NEW dot on servers started since you last looked, and a menu bar dot when something changed.
