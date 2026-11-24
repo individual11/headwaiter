@@ -32,11 +32,12 @@ Projects are found from the nearest workspace root, git root or manifest (`packa
 - Keyboard: type (or ⌘F) to filter by name, project, framework or port. ↑↓ select, Return opens, ⌘C (or ⌥Return) copies the URL, ⌘R reveals the folder in Finder, ⌘T opens it in your terminal, ⌘⌫ stops, → and ← show and hide other ports, Esc backs out. While you're typing, ⌘⌫, ← and → edit the text; ↑ or ↓ moves into the list.
 - A server listening on more than one port shows a **+N** chip. Click it to list the other ports under the row, each one clickable.
 - Stop sends SIGTERM to the server's whole process tree, then offers Force Quit (SIGKILL) after 3 s. The force quit can be made automatic.
+- Right-click a project to stop everything in it, or the menu bar icon to stop all servers (it lists them and asks first). Hidden servers are left running.
 - Recently stopped list, a NEW dot on servers started since you last looked, and a menu bar dot when something changed.
 - Optional notifications when a server starts, or stops without you stopping it. Restarts and short test runs stay quiet.
 - Optional log: one line for each start and stop, with how long the server ran and whether Headwaiter stopped it. Filter it in its own window and clear it any time. It's a text file, `~/Library/Logs/Headwaiter/servers.log`.
 - Settings: Open at Login, Appearance (System, Light, Dark), project icons, terminal, automatic force quit, updates, notifications, folder access, hidden items, log.
-- Right-click the menu bar icon for Settings, updates, About, Capture Diagnostics and Quit.
+- Right-click the menu bar icon for Stop All Servers, Settings, updates, About, Capture Diagnostics and Quit.
 - What Headwaiter sees stays on your Mac: no account, no analytics. It connects only to your own servers (redirects are never followed) and, for updates, to GitHub.
 - Release builds update themselves with [Sparkle](https://sparkle-project.org). They ask before checking automatically and before installing anything. Builds from source never check.
 

@@ -1,7 +1,7 @@
 import AppKit
 
-/// Right-click (or Control-click) on the menu bar icon shows Settings…, updates, About,
-/// Capture Diagnostics and Quit.
+/// Right-click (or Control-click) on the menu bar icon shows Stop All Servers…, Settings…, updates,
+/// About, Capture Diagnostics and Quit.
 ///
 /// SwiftUI's MenuBarExtra has no right-click hook, so this watches the app's own mouse
 /// events and catches right-clicks on its status bar button before MenuBarExtra sees them.
@@ -9,6 +9,8 @@ import AppKit
 @MainActor
 final class StatusItemMenu: NSObject {
     private var monitor: Any?
+    /// Set when the app starts, before the menu can open.
+    static var store: ServerStore?
 
     func install() {
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.rightMouseDown, .leftMouseDown]) { [weak self] event in
@@ -29,6 +31,11 @@ final class StatusItemMenu: NSObject {
     private func showMenu(for event: NSEvent) {
         guard let view = event.window?.contentView else { return }
         let menu = NSMenu()
+        menu.autoenablesItems = false
+        let stopItem = item("Stop All Servers…", #selector(stopAll))
+        stopItem.isEnabled = Self.store?.stoppableGroups.isEmpty == false
+        menu.addItem(stopItem)
+        menu.addItem(.separator())
         menu.addItem(item("Settings…", #selector(openSettings), key: ","))
         if Updater.shared.isAvailable {
             let title = Updater.shared.availableVersion.map { "Update to \($0)…" } ?? "Check for Updates…"
@@ -49,6 +56,10 @@ final class StatusItemMenu: NSObject {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
         item.target = self
         return item
+    }
+
+    @objc private func stopAll() {
+        if let store = Self.store { Actions.promptStopAll(store) }
     }
 
     @objc private func openSettings() {
