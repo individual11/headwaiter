@@ -8,8 +8,8 @@
 set -euo pipefail
 
 config=${1:-release}
-version=${VERSION:-0.5}
-build=${BUILD:-5}   # must go up with every release: Sparkle compares it
+version=${VERSION:-0.6}
+build=${BUILD:-6}   # must go up with every release: Sparkle compares it
 root=${0:A:h:h}
 cd "$root"
 
