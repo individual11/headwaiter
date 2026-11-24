@@ -36,6 +36,14 @@ gh release create v0.6 build/updates/Headwaiter-0.6.dmg build/updates/Headwaiter
 - **Don't mark it as a pre-release,** even for a beta. GitHub's `latest` skips those.
 - **Don't edit `appcast.xml`.** Its signature would no longer match.
 
+## The DMG window
+
+`scripts/make-dmg.sh` packs the DMG with the window layout and background in `Resources/dmg`. To change them, edit `scripts/dmg-background.swift` (the picture) or `scripts/make-dmg-layout.sh` (window size, icon positions), run `scripts/make-dmg-layout.sh`, and commit the result. Finder writes the layout, so macOS asks once to let your terminal control it. Check the window in a test DMG, in light and dark mode:
+
+```bash
+scripts/make-dmg.sh build/Headwaiter.app build/dmg-test.dmg && open build/dmg-test.dmg
+```
+
 ## Testing an update
 
 Build a copy that thinks it's older, install it, then choose Check for Updates from the right-click menu:

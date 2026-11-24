@@ -101,7 +101,7 @@ swift test
   - `Updater`: Sparkle, the app's only dependency.
   - `PopoverKeyboard`: typing, selection and shortcuts in the list.
   - `PopoverView`, `SettingsView`, `MenuBarIcon`.
-- `scripts/`: app bundling, dev signing, icon, release.
+- `scripts/`: app bundling, dev signing, icon, DMG, release.
 - `Tests/HeadwaiterCoreTests`: fixture-driven tests (Swift Testing). `Fixtures/` holds captures from real machines.
 
 ## Adding a runtime
