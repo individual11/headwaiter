@@ -73,15 +73,10 @@ fi
 codesign --verify --deep --strict --verbose=2 "$app" 2>&1 | tail -2
 codesign -dv "$app" 2>&1 | grep -E "^(Authority|TeamIdentifier|Runtime|Timestamp)" || true
 
-# --- DMG: the app plus an Applications shortcut to drag it onto -----------------------------
+# --- DMG ------------------------------------------------------------------------------------
 step "Creating DMG"
 dmg="build/Headwaiter-$version.dmg"
-stage=$(mktemp -d)
-trap 'rm -rf "$stage"' EXIT
-cp -R "$app" "$stage/"
-ln -s /Applications "$stage/Applications"
-rm -f "$dmg"
-hdiutil create -volname "Headwaiter $version" -srcfolder "$stage" -ov -format UDZO -quiet "$dmg"
+scripts/make-dmg.sh "$app" "$dmg"
 codesign --force "${timestamp[@]}" --sign "$identity" "$dmg"
 print "$dmg ($(du -h "$dmg" | cut -f1))"
 
