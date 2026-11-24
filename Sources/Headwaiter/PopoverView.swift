@@ -48,7 +48,10 @@ struct PopoverView: View {
             Button("") { NSApp.terminate(nil) }.keyboardShortcut("q").hidden()
         }
         .fitWindowToContent()
-        .onAppear { store.isPopoverOpen = true }
+        .onAppear {
+            store.isPopoverOpen = true
+            TerminalApps.shared.refresh()
+        }
         .onDisappear { store.isPopoverOpen = false }
     }
 
@@ -268,6 +271,10 @@ struct ProjectCard: View {
             }
             .help(group.project.rootPath)
             .contextMenu {
+                if group.id != ServerStore.dockerGroupRoot {
+                    FolderMenuItems(folder: group.project.rootPath)
+                    Divider()
+                }
                 Button("Hide \(group.project.displayName)") { store.hideProject(group.project.rootPath) }
             }
 
@@ -361,6 +368,8 @@ struct ServerRow: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { activate() }
         .accessibilityAction(named: "Copy URL") { Actions.copy(url.absoluteString) }
+        .accessibilityAction(named: "Reveal in Finder") { Actions.reveal(server.package.path) }
+        .accessibilityAction(named: "Open in Terminal") { TerminalApps.shared.open(server.package.path) }
         .accessibilityAction(named: "Stop") { store.stop(server) }
         .accessibilityActions {
             if !server.secondaryPorts.isEmpty {
@@ -494,6 +503,8 @@ struct ServerRow: View {
         if !server.secondaryPorts.isEmpty {
             Button(expanded ? "Hide Other Ports" : "Show Other Ports") { store.toggleExpanded(server.id) }
         }
+        Divider()
+        FolderMenuItems(folder: server.package.path)
         Divider()
         if case .needsForceQuit = stopState {
             Button("Force Quit") { store.forceQuit(server) }
@@ -689,6 +700,10 @@ struct ContainerRow: View {
             Button(expanded ? "Hide Other Ports" : "Show Other Ports") { store.toggleExpanded(container.id) }
         }
         Divider()
+        if let project = container.project {
+            FolderMenuItems(folder: project.rootPath)
+            Divider()
+        }
         Button("Stop Container") { store.stop(container) }.disabled(isStopping)
         Divider()
         Button(String("Hide Port :\(container.primaryPort)")) { store.hidePort(container.primaryPort) }
@@ -867,6 +882,8 @@ struct HistoryRow: View {
         .help(entry.command.joined(separator: " "))
         .contextMenu {
             Button("Copy Command") { Actions.copy(entry.command.joined(separator: " ")) }
+            FolderMenuItems(folder: entry.packagePath)
+            Divider()
             Button("Forget") { store.forget(entry) }
         }
         .accessibilityElement(children: .ignore)
@@ -875,6 +892,21 @@ struct HistoryRow: View {
 }
 
 // MARK: - Small pieces
+
+/// Menu items for a project or package folder.
+struct FolderMenuItems: View {
+    let folder: String
+    var terminals = TerminalApps.shared
+    /// Read so the item's title follows the Settings choice.
+    @AppStorage(Preferences.terminalKey) private var terminal = ""
+
+    var body: some View {
+        Button("Reveal in Finder") { Actions.reveal(folder) }
+        if let app = terminals.current {
+            Button("Open in \(app.name)") { terminals.open(folder) }
+        }
+    }
+}
 
 /// "+N" for a row's other ports. Click it to show them under the row (`OtherPortsList`).
 struct PortChip: View {
@@ -1059,6 +1091,31 @@ enum Actions {
 
     static func open(_ url: URL) {
         NSWorkspace.shared.open(url)
+    }
+
+    /// Selects the folder in Finder.
+    @MainActor
+    static func reveal(_ folder: String) {
+        guard checkFolder(folder) else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: folder, isDirectory: true)])
+    }
+
+    /// False, after saying so, if the folder was moved or deleted (a removed worktree, say).
+    @MainActor
+    static func checkFolder(_ folder: String) -> Bool {
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: folder, isDirectory: &isDirectory), isDirectory.boolValue { return true }
+        alert("That folder no longer exists", Display.abbreviatingHome(folder))
+        return false
+    }
+
+    @MainActor
+    static func alert(_ title: String, _ message: String) {
+        NSApp.activate()
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.runModal()
     }
 
     static func openFilesAndFoldersSettings() {

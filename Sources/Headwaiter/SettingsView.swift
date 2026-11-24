@@ -30,7 +30,9 @@ private extension View {
 
 struct GeneralSettings: View {
     var updater = Updater.shared
+    var terminals = TerminalApps.shared
     @AppStorage(Preferences.autoForceQuitKey) private var autoForceQuit = false
+    @AppStorage(Preferences.terminalKey) private var terminal = ""
     @AppStorage(AppAppearance.key) private var appearance: AppAppearance = .system
 
     var body: some View {
@@ -45,6 +47,21 @@ struct GeneralSettings: View {
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: appearance) { _, new in AppAppearance.apply(new) }
+            }
+
+            Section("Opening folders") {
+                Picker(selection: $terminal) {
+                    Text(terminals.systemDefault.map { "Default (\($0.name))" } ?? "Default").tag("")
+                    Divider()
+                    ForEach(terminals.installed) { Text($0.name).tag($0.id) }
+                    // Keeps the choice showing if that app was removed.
+                    if !terminal.isEmpty && !terminals.installed.contains(where: { $0.id == terminal }) {
+                        Text("Not installed").tag(terminal)
+                    }
+                } label: {
+                    Text("Terminal")
+                    Text("Where a server's right-click menu opens its folder.")
+                }
             }
 
             Section("Stopping servers") {
@@ -65,6 +82,7 @@ struct GeneralSettings: View {
             }
         }
         .settingsTab()
+        .onAppear { terminals.refresh() }
     }
 }
 

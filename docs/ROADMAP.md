@@ -4,7 +4,7 @@ Roughly in order. Open an issue to argue for something, or if you want to build 
 
 **Daily use**
 - Keyboard navigation and type-to-filter
-- Reveal in Finder, open in terminal, open in editor
+- Open in editor
 - A marker for orphaned servers (the terminal or agent that started them is gone)
 - Stop all, per project and globally
 - CPU and memory per server
