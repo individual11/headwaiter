@@ -276,6 +276,13 @@ struct Card: View {
 struct ProjectCard: View {
     let group: ProjectGroup
     let store: ServerStore
+    @Environment(PopoverKeyboard.self) private var keyboard
+
+    /// Filtered, the card holds only what matches, and that's all this stops.
+    private var stopAllTitle: String {
+        keyboard.filter.isEmpty ? "Stop All in \(group.project.displayName)"
+            : "Stop Matching in \(group.project.displayName)"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -307,6 +314,9 @@ struct ProjectCard: View {
                     FolderMenuItems(folder: group.project.rootPath)
                     Divider()
                 }
+                Button(stopAllTitle) { store.stopAll([group]) }
+                    .disabled(store.stoppable(in: group) == nil)
+                Divider()
                 Button("Hide \(group.project.displayName)") { store.hideProject(group.project.rootPath) }
             }
 
@@ -1102,7 +1112,80 @@ extension Server {
     }
 }
 
+/// What the Stop All confirmation lists.
+struct StopAllList: View {
+    let groups: [ProjectGroup]
+
+    var body: some View {
+        // Scrolls only when it has to.
+        ViewThatFits(in: .vertical) {
+            rows
+            ScrollView { rows }
+        }
+        .padding(.horizontal, 6)   // lines up with the alert's text
+        .frame(width: 280)
+        .frame(maxHeight: 260)    // taller, and the alert switches to its wide layout
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var rows: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(groups) { group in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(group.project.displayName)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    ForEach(group.servers) { row($0.package.name, $0.primaryPort) }
+                    ForEach(group.containers) { row($0.name, $0.primaryPort, note: "container") }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func row(_ name: String, _ port: UInt16, note: String? = nil) -> some View {
+        HStack(spacing: 6) {
+            Text(name).lineLimit(1).truncationMode(.middle)
+            if let note { Text(note).font(.system(size: 11)).foregroundStyle(.secondary) }
+            Spacer(minLength: 8)
+            Text(verbatim: ":\(port)").monospacedDigit().foregroundStyle(.secondary)
+        }
+        .font(.system(size: 13))
+        .accessibilityElement(children: .combine)
+    }
+}
+
 enum Actions {
+    /// Asks first, listing everything it will stop.
+    @MainActor
+    static func promptStopAll(_ store: ServerStore) {
+        let groups = store.stoppableGroups
+        guard !groups.isEmpty, NSApp.modalWindow == nil else { return }
+        NSApp.activate()
+        let alert = stopAllAlert(groups, hiddenCount: store.hiddenCount)
+        // Only what was listed: anything that starts while this is open is left alone.
+        if alert.runModal() == .alertFirstButtonReturn { store.stopAll(groups) }
+    }
+
+    @MainActor
+    static func stopAllAlert(_ groups: [ProjectGroup], hiddenCount: Int) -> NSAlert {
+        let count = groups.reduce(0) { $0 + $1.servers.count + $1.containers.count }
+        let alert = NSAlert()
+        alert.messageText = count == 1 ? "Stop 1 server?" : "Stop all \(count) servers?"
+        if hiddenCount > 0 {
+            alert.informativeText = hiddenCount == 1 ? "1 hidden server keeps running."
+                : "\(hiddenCount) hidden servers keep running."
+        }
+        let list = NSHostingView(rootView: StopAllList(groups: groups))
+        list.frame.size = list.fittingSize
+        alert.accessoryView = list
+        alert.addButton(withTitle: "Stop All")
+        alert.addButton(withTitle: "Cancel")
+        return alert
+    }
+
     /// Asks for a custom URL for this package's server (e.g. a path like /admin, https, or
     /// app.localhost). Leaving the port as the server's current one makes it follow port changes.
     @MainActor

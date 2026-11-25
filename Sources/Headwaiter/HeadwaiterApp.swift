@@ -9,7 +9,9 @@ struct HeadwaiterApp: App {
     init() {
         // Before the store loads state: bring over data saved under the old name.
         RenameMigration.runIfNeeded()
-        _store = State(initialValue: ServerStore())
+        let store = ServerStore()
+        _store = State(initialValue: store)
+        StatusItemMenu.store = store
     }
 
     var body: some Scene {

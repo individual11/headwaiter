@@ -382,7 +382,13 @@ final class ServerStore {
         changeTracker.willStop(id: id)
         logTracker.willStop(id: id, .headwaiter)
         Task {
-            let ok = await Task.detached { DockerSocketSource().stop(id, kill: false) }.value
+            // Docker answers only once the container is down, up to 10 s later. On Swift's few shared
+            // threads, stopping many at once would hold up scans and other stops.
+            let ok = await withCheckedContinuation { done in
+                DispatchQueue.global(qos: .utility).async {
+                    done.resume(returning: DockerSocketSource().stop(id, kill: false))
+                }
+            }
             log("stop container \(container.name): \(ok)")
             if ok { restart() } else { stopFailed(id, "Docker didn't stop the container") }
         }
@@ -466,6 +472,36 @@ final class ServerStore {
                     stopStates[id] = .needsForceQuit(survivors)
                 }
             }
+        }
+    }
+
+    /// The part of `group` that Stop All would stop: not rows already stopping, nor ones waiting
+    /// for Force Quit, which Stop All never does.
+    func stoppable(in group: ProjectGroup) -> ProjectGroup? {
+        var group = group
+        group.servers.removeAll { !canStop($0.id) }
+        group.containers.removeAll { !canStop($0.id) }
+        return group.servers.isEmpty && group.containers.isEmpty ? nil : group
+    }
+
+    private func canStop(_ id: String) -> Bool {
+        switch stopStates[id] {
+        case .stopping, .needsForceQuit: false
+        case .failed, nil: true
+        }
+    }
+
+    /// Visible servers only: hidden ones are never stopped in bulk.
+    var stoppableGroups: [ProjectGroup] { groups.compactMap(stoppable) }
+    var hiddenCount: Int { allServers.count + allContainers.count - itemCount }
+
+    /// Stops what `groups` lists, except anything that exited or began stopping since. IDs include
+    /// the start time, so a restarted server isn't mistaken for the one that was listed.
+    func stopAll(_ groups: [ProjectGroup]) {
+        let running = allIDs
+        for group in groups.compactMap(stoppable) {
+            for server in group.servers where running.contains(server.id) { stop(server) }
+            for container in group.containers where running.contains(container.id) { stop(container) }
         }
     }
 
